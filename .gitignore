@@ -1,0 +1,94 @@
+# ================================
+# PYTHON
+# ================================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pdb
+*.egg-info/
+*.tmp
+
+# Virtual Environments
+venv/
+venv_wsl/
+.env.vscode/
+
+# ================================
+# ENVIRONMENT FILES
+# ================================
+.env
+*.env
+
+# ================================
+# TERRAFORM
+# ================================
+terraform.tfstate
+terraform.tfstate.backup
+.crash.log
+.terraform/
+.terraform.lock.hcl
+
+# Auto-generated Terraform jobs
+backend/terraform_templates/*
+
+# ================================
+# DOCKER
+# ================================
+*.log
+docker-data/
+*.pid
+
+# ================================
+# REDIS
+# ================================
+dump.rdb
+
+# ================================
+# NODE / FRONTEND
+# ================================
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.DS_Store
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# ================================
+# OS JUNK (Windows / macOS)
+# ================================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ================================
+# EDITOR FILES
+# ================================
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+
+# ================================
+# BACKUPS
+# ================================
+*~
+*.bak
+*.old
+*.backup
+*.copy
+
+# ================================
+# BUILD ARTIFACTS
+# ================================
+dist/
+dist-ssr/
+*.local
+
+# ================================
+# LOGS
+# ================================
+logs/
+lerna-debug.log*

@@ -1,0 +1,125 @@
+services:
+
+  # ---------------------------------------------------
+  # FRONTEND (React + Nginx)
+  # ---------------------------------------------------
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_started
+    networks:
+      - appnet
+    restart: unless-stopped
+
+  # ---------------------------------------------------
+  # BACKEND (FastAPI)
+  # ---------------------------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - appnet
+    restart: unless-stopped
+
+  # ---------------------------------------------------
+  # WORKER (RQ + Terraform Runner)
+  # ---------------------------------------------------
+  worker:
+    build:
+      context: .
+      dockerfile: worker/Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      backend:
+        condition: service_started
+      redis:
+        condition: service_started
+    networks:
+      - appnet
+    restart: unless-stopped
+
+  # ---------------------------------------------------
+  # REDIS (Job Queue)
+  # ---------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - appnet
+    restart: unless-stopped
+
+  # ---------------------------------------------------
+  # POSTGRES (Database)
+  # ---------------------------------------------------
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - appnet
+    restart: unless-stopped
+
+  # ---------------------------------------------------
+  # PGADMIN (Web UI for PostgreSQL)
+  # ---------------------------------------------------
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: aws-tfv5-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - appnet
+
+# ---------------------------------------------------
+# NETWORKS
+# ---------------------------------------------------
+networks:
+  appnet:
+    driver: bridge
+
+# ---------------------------------------------------
+# VOLUMES
+# ---------------------------------------------------
+volumes:
+  postgres_data:

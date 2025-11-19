@@ -1,0 +1,26 @@
+#############################
+# Database (Async PostgreSQL)
+#############################
+SQLAlchemy==2.0.29            # ORM for logging
+asyncpg==0.29.0               # Async PostgreSQL driver
+# psycopg2-binary removed (not needed)
+
+#############################
+# Redis Queue
+#############################
+redis==5.0.4                  # Redis client
+rq==1.15.1                    # Background job worker
+
+#############################
+# Utilities
+#############################
+python-dotenv==1.0.1          # Load .env for AWS keys
+pydantic==2.7.0               # For validation inside worker
+requests==2.31.0              # If worker needs to call backend
+aiofiles==23.2.1              # Async file ops
+
+#############################
+# AWS SDK
+#############################
+boto3==1.34.40                # AWS SDK for EC2/S3/etc
+botocore==1.34.40             # boto3 core lib
