@@ -1,0 +1,123 @@
+version: '3.8'
+
+services:
+  # ------------------------
+  # Node Exporter
+  # ------------------------
+  node-exporter:
+    image: prom/node-exporter
+    ports:
+      - "9100:9100"
+    networks:
+      - monitor
+    restart: unless-stopped
+
+  # ------------------------
+  # cAdvisor (Docker metrics)
+  # ------------------------
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - monitor
+    restart: unless-stopped
+
+  # ------------------------
+  # Redis Exporter
+  # ------------------------
+  redis-exporter:
+    image: oliver006/redis_exporter
+    command: --redis.addr=redis://aws-tf-v6_redis_1:6379
+    ports:
+      - "9121:9121"
+    networks:
+      - monitor
+    restart: unless-stopped
+
+  # ------------------------
+  # Postgres Exporter
+  # ------------------------
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable"
+    ports:
+      - "9187:9187"
+    networks:
+      - monitor
+    restart: unless-stopped
+
+  # ------------------------
+  # Prometheus
+  # ------------------------
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - monitor
+    restart: unless-stopped
+
+  # ------------------------
+  # Loki
+  # ------------------------
+  loki:
+    image: grafana/loki:2.9.0
+    volumes:
+      - ./loki.yml:/etc/loki/loki.yml
+      - ./loki-data:/loki-data   # FIXED
+    command: -config.file=/etc/loki/loki.yml
+    ports:
+      - "3100:3100"
+    networks:
+      - monitor
+    restart: unless-stopped
+
+  # ------------------------
+  # Promtail
+  # ------------------------
+  promtail:
+    image: grafana/promtail:2.9.0
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./promtail.yml:/etc/promtail/promtail.yml
+    command: -config.file=/etc/promtail/promtail.yml
+    networks:
+      - monitor
+    restart: unless-stopped
+
+  # ------------------------
+  # Grafana
+  # ------------------------
+  grafana:
+    image: grafana/grafana:10.3.3
+    ports:
+      - "3000:3000"
+    networks:
+      - monitor
+    restart: unless-stopped
+    volumes:
+    - grafana-storage:/var/lib/grafana
+# ------------------------
+# Networks
+# ------------------------
+networks:
+  monitor:
+    driver: bridge
+
+# ------------------------
+# Volumes
+# ------------------------
+volumes:
+  grafana-storage:
+  loki-data:
+
+  
