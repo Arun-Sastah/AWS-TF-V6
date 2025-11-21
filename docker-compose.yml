@@ -1,20 +1,6 @@
-services:
+version: "3.9"
 
-  # ---------------------------------------------------
-  # FRONTEND (React + Nginx)
-  # ---------------------------------------------------
-  frontend:
-    build:
-      context: .
-      dockerfile: frontend/Dockerfile
-    ports:
-      - "80:80"
-    depends_on:
-      backend:
-        condition: service_started
-    networks:
-      - appnet
-    restart: unless-stopped
+services:
 
   # ---------------------------------------------------
   # BACKEND (FastAPI)
@@ -33,16 +19,17 @@ services:
       redis:
         condition: service_started
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
-      interval: 5s
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
       timeout: 5s
       retries: 10
     networks:
       - appnet
+      - monitor       # <-- ADDED
     restart: unless-stopped
 
   # ---------------------------------------------------
-  # WORKER (RQ + Terraform Runner)
+  # WORKER (RQ + Terraform)
   # ---------------------------------------------------
   worker:
     build:
@@ -53,12 +40,13 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      backend:
-        condition: service_started
       redis:
+        condition: service_started
+      backend:
         condition: service_started
     networks:
       - appnet
+      - monitor       # <-- ADDED
     restart: unless-stopped
 
   # ---------------------------------------------------
@@ -70,6 +58,7 @@ services:
       - "6379:6379"
     networks:
       - appnet
+      - monitor        # <-- ADDED
     restart: unless-stopped
 
   # ---------------------------------------------------
@@ -92,24 +81,8 @@ services:
       retries: 10
     networks:
       - appnet
+      - monitor        # <-- ADDED
     restart: unless-stopped
-
-  # ---------------------------------------------------
-  # PGADMIN (Web UI for PostgreSQL)
-  # ---------------------------------------------------
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: aws-tfv5-pgadmin
-    restart: unless-stopped
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: admin
-    ports:
-      - "5050:80"
-    depends_on:
-      - postgres
-    networks:
-      - appnet
 
 # ---------------------------------------------------
 # NETWORKS
@@ -118,8 +91,12 @@ networks:
   appnet:
     driver: bridge
 
+  monitor:
+    external: true     # <-- REQUIRED TO JOIN MONITORING STACK NETWORK
+
 # ---------------------------------------------------
 # VOLUMES
 # ---------------------------------------------------
 volumes:
   postgres_data:
+
